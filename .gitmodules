@@ -1,0 +1,3 @@
+[submodule "latex-review-platform/src/app/xp_pgrs_unofficial_guide"]
+	path = latex-review-platform/src/app/xp_pgrs_unofficial_guide
+	url = https://github.com/xp-pgrs-unofficial-guide/xp_pgrs_unofficial_guide.git
