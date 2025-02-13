@@ -1,15 +1,19 @@
-import { FC } from 'react';
 import { notFound } from 'next/navigation';
 import ChapterContent from '@/components/ChapterContent';
-import { getChapterById } from '@/lib/latex-parser';
+import { getChapterById, getAllChapters } from '@/lib/latex-parser';
 
-interface ChapterPageProps {
-  params: {
-    id: string;
-  };
+export async function generateStaticParams() {
+  const chapters = getAllChapters();
+  return chapters.map((chapter) => ({
+    id: chapter.id,
+  }));
 }
 
-const ChapterPage: FC<ChapterPageProps> = ({ params }) => {
+export default function ChapterPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const chapter = getChapterById(params.id);
 
   if (!chapter) {
@@ -76,6 +80,4 @@ const ChapterPage: FC<ChapterPageProps> = ({ params }) => {
       </div>
     </div>
   );
-};
-
-export default ChapterPage;
+}

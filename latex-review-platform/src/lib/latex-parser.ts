@@ -88,7 +88,7 @@ export function parseMainFile(): Chapter[] {
         content: cleanLatexContent(content),
         type: currentSection
       });
-    } catch (error) {
+    } catch (_error) {
       console.error(`Error reading chapter file: ${filename}.tex`);
     }
   }
