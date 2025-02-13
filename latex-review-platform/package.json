@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "export": "rm -rf ../docs && next build && cp -r out ../docs"
+    "lint": "next lint"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",
@@ -25,8 +24,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@typescript-eslint/eslint-plugin": "^8.24.0",
-    "@typescript-eslint/parser": "^8.24.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "postcss": "^8",
