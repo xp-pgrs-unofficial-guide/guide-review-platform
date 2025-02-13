@@ -32,6 +32,14 @@
 
 1. 确保你的电脑已安装 Node.js
 2. 克隆这个代码仓库
+   ```bash
+   git clone --recursive https://github.com/your-username/latex-review-platform.git
+   cd latex-review-platform
+   ```
+   注意：使用 `--recursive` 标志确保所有子模块也被克隆。如果你已经克隆了仓库但忘记了这个标志，可以在仓库目录中运行：
+   ```bash
+   git submodule update --init --recursive
+   ```
 3. 在项目目录下运行：
    ```bash
    npm install
