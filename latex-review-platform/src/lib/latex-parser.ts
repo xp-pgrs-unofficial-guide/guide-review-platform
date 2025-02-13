@@ -27,12 +27,35 @@ export function extractTitle(content: string): string {
   return '未命名章节';
 }
 
-export function cleanLatexContent(content: string): string {
-  // 移除注释
-  content = content.replace(/%.*$/gm, '');
+function processInputCommands(content: string, basePath: string): string {
+  // Regular expression to match \input commands
+  const inputRegex = /\\input\{([^}]+)\}/g;
   
-  // 替换常见的 LaTeX 命令
-  content = content
+  return content.replace(inputRegex, (match, filePath) => {
+    try {
+      // Handle .tex extension if not provided
+      const fullPath = filePath.endsWith('.tex') ? filePath : `${filePath}.tex`;
+      const absolutePath = path.join(basePath, fullPath);
+      
+      // Read the content of the included file
+      const includedContent = fs.readFileSync(absolutePath, 'utf-8');
+      
+      // Recursively process any nested \input commands
+      return processInputCommands(includedContent, path.dirname(absolutePath));
+    } catch (error) {
+      console.error(`Error processing \input command for file: ${filePath}`);
+      return match; // Keep original \input command if there's an error
+    }
+  });
+}
+
+export function cleanLatexContent(content: string): string {
+  // First process any \input commands
+  const processedContent = processInputCommands(content, LATEX_PROJECT_PATH);
+  
+  // Then apply existing cleaning logic
+  return processedContent
+    .replace(/%.*$/gm, '')
     .replace(/\\chapter{([^}]+)}/g, '# $1\n\n')
     .replace(/\\section{([^}]+)}/g, '## $1\n\n')
     .replace(/\\subsection{([^}]+)}/g, '### $1\n\n')
@@ -48,12 +71,9 @@ export function cleanLatexContent(content: string): string {
     .replace(/\\end{enumerate}/g, '\n')
     .replace(/\\\\/, '\n')
     .replace(/\\par\s*/g, '\n\n')
-    .replace(/\\textcolor{[^}]+}{([^}]+)}/g, '$1');
-
-  // 清理多余的空行
-  content = content.replace(/\n{3,}/g, '\n\n');
-  
-  return content.trim();
+    .replace(/\\textcolor{[^}]+}{([^}]+)}/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 export function parseMainFile(): Chapter[] {
