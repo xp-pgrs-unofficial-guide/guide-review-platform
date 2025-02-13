@@ -28,23 +28,72 @@ export function extractTitle(content: string): string {
 }
 
 function processInputCommands(content: string, basePath: string): string {
-  // Regular expression to match \input commands
+  // Regular expression to match \input commands and handle author references
   const inputRegex = /\\input\{([^}]+)\}/g;
+  const authorRefRegex = /\\([A-Za-z]+)\b/g;
+  
+  // First replace any author references
+  content = content.replace(authorRefRegex, (match, name) => {
+    if (name === 'Wu' || name === 'Wang' || name === 'Xie') {
+      return name; // Just use the name directly
+    }
+    return match;
+  });
   
   return content.replace(inputRegex, (match, filePath) => {
+    // Skip empty or invalid paths
+    if (!filePath || filePath === '你的tex文件路径') {
+      console.warn(`Skipping invalid input path: ${filePath}`);
+      return '';
+    }
+
     try {
-      // Handle .tex extension if not provided
-      const fullPath = filePath.endsWith('.tex') ? filePath : `${filePath}.tex`;
-      const absolutePath = path.join(basePath, fullPath);
+      // Clean up the file path and handle special cases
+      const cleanPath = filePath.trim()
+        .replace(/^author-folder\/([^\/]+)$/, 'author-folder/$1/$1') // Add filename if only author given
+        .replace(/^author-folder\/([^\/]+)\/$/, 'author-folder/$1/$1'); // Add filename if path ends in slash
       
-      // Read the content of the included file
+      // Handle .tex extension
+      const fullPath = cleanPath.endsWith('.tex') ? cleanPath : `${cleanPath}.tex`;
+      
+      // First try relative to the base path
+      let absolutePath = path.join(basePath, fullPath);
+      
+      // If file doesn't exist at relative path, try from project root
+      if (!fs.existsSync(absolutePath)) {
+        absolutePath = path.join(LATEX_PROJECT_PATH, fullPath);
+      }
+      
+      // If still not found, try some common variations
+      if (!fs.existsSync(absolutePath)) {
+        const variations = [
+          path.join(path.dirname(absolutePath), path.basename(filePath), path.basename(filePath) + '.tex'),
+          path.join(path.dirname(absolutePath), 'index.tex'),
+          path.join(path.dirname(absolutePath), 'main.tex')
+        ];
+        
+        for (const variant of variations) {
+          if (fs.existsSync(variant)) {
+            absolutePath = variant;
+            break;
+          }
+        }
+      }
+
+      // Verify file exists before reading
+      if (!fs.existsSync(absolutePath)) {
+        console.warn(`Input file not found: ${fullPath} (tried multiple variations)`);
+        return '';
+      }
+
+      // Read and process the included file
       const includedContent = fs.readFileSync(absolutePath, 'utf-8');
       
-      // Recursively process any nested \input commands
+      // Recursively process any nested inputs using the directory of the included file
       return processInputCommands(includedContent, path.dirname(absolutePath));
     } catch (error) {
-      console.error(`Error processing \input command for file: ${filePath}`);
-      return match; // Keep original \input command if there's an error
+      console.warn(`Error processing input file: ${filePath} - ${error.message}`);
+      return '';
     }
   });
 }
