@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export interface Chapter {
   id: string;
@@ -174,11 +177,60 @@ export function parseMainFile(): Chapter[] {
   return chapters;
 }
 
-export function getChapterById(id: string): Chapter | null {
+export async function getChapterById(id: string): Promise<Chapter | null> {
   const chapters = parseMainFile();
-  return chapters.find(chapter => chapter.id === id) || null;
+  const chapter = chapters.find(chapter => chapter.id === id);
+  
+  if (!chapter) {
+    return null;
+  }
+
+  // 确保章节在数据库中存在
+  try {
+    const dbChapter = await prisma.chapter.upsert({
+      where: { id: chapter.id },
+      update: {
+        title: chapter.title,
+        content: chapter.content,
+      },
+      create: {
+        id: chapter.id,
+        title: chapter.title,
+        content: chapter.content,
+      },
+    });
+    console.log('Chapter synced with database:', dbChapter);
+  } catch (error) {
+    console.error('Error syncing chapter with database:', error);
+  }
+
+  return chapter;
 }
 
-export function getAllChapters(): Chapter[] {
-  return parseMainFile();
+export async function getAllChapters(): Promise<Chapter[]> {
+  const chapters = parseMainFile();
+  
+  // 确保所有章节都在数据库中存在
+  try {
+    await Promise.all(
+      chapters.map(chapter =>
+        prisma.chapter.upsert({
+          where: { id: chapter.id },
+          update: {
+            title: chapter.title,
+            content: chapter.content,
+          },
+          create: {
+            id: chapter.id,
+            title: chapter.title,
+            content: chapter.content,
+          },
+        })
+      )
+    );
+  } catch (error) {
+    console.error('Error syncing chapters with database:', error);
+  }
+
+  return chapters;
 }

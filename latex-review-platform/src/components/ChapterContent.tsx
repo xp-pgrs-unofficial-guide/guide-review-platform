@@ -13,6 +13,7 @@ const Markdown = dynamic(
 
 interface ChapterContentProps {
   content: string;
+  chapterId: string;
 }
 
 const ChapterContent: FC<ChapterContentProps> = ({ content }) => {
