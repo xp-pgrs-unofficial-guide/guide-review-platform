@@ -12,7 +12,7 @@ export interface Chapter {
   type: 'frontmatter' | 'mainmatter' | 'backmatter';
 }
 
-const LATEX_PROJECT_PATH = path.join(process.cwd(), 'src/app/xp_pgrs_unofficial_guide');
+const LATEX_PROJECT_PATH = path.join(process.cwd(), 'xp_pgrs_unofficial_guide');
 
 export function extractTitle(content: string): string {
   // 尝试从章节内容中提取标题
