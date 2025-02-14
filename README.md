@@ -1,9 +1,15 @@
 # 在线浏览及评论平台
 
+[English version](./README.en.md)
+
 这是一个简单易用的在线浏览及评论平台，专为[西浦博士生非官方攻略](https://github.com/xp-pgrs-unofficial-guide/xp_pgrs_unofficial_guide)开发。你可以通过此平台阅读攻略内容，并分章节进行评论和讨论。
 
 针对此平台的功能需求，欢迎[提交 Issue](https://github.com/xp-pgrs-unofficial-guide/guide-review-platform/issues)；  
-针对攻略的内容，详见攻略[中文版](https://github.com/xp-pgrs-unofficial-guide/xp_pgrs_unofficial_guide)或[英文版](https://github.com/xp-pgrs-unofficial-guide/xp_pgrs_unofficial_guide_EN)。
+针对攻略的内容本身，您可直接在平台中使用讨论功能留言参与讨论，请参考攻略[中文版](https://github.com/xp-pgrs-unofficial-guide/xp_pgrs_unofficial_guide)或[英文版](https://github.com/xp-pgrs-unofficial-guide/xp_pgrs_unofficial_guide_EN)的说明进行反馈。
+
+## 生成式 AI 使用声明
+
+本项目的搭建及翻译大量使用生成式 AI 进行辅助，开发者仅依个人经验对项目内容进行了大致浏览。使用时请自行判断是否适合个人需求。
 
 ## 主要功能
 
