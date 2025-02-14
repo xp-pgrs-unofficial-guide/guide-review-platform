@@ -101,6 +101,7 @@ function cleanLatexContent(content: string, basePath: string, lang: 'zh' | 'en')
     .replace(/\\\\/, '\n')
     .replace(/\\par\s*/g, '\n\n')
     .replace(/\\textcolor{[^}]+}{([^}]+)}/g, '$1')
+    .replace(/\\label{[^}]+}/g, '')  // Remove \label{...} content
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
