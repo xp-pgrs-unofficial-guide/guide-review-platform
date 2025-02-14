@@ -20,10 +20,13 @@ const ChapterWithLanguage: FC<ChapterWithLanguageProps> = ({ initialChapter }) =
   useEffect(() => {
     const fetchChapter = async () => {
       try {
+        console.log(`Fetching chapter ${initialChapter.id} in language ${currentLang()}`);
         const response = await fetch(`/api/content?chapterId=${initialChapter.id}&lang=${currentLang()}`);
         if (response.ok) {
           const data = await response.json();
           setChapter(data);
+        } else {
+          console.error('Failed to fetch chapter:', await response.text());
         }
       } catch (error) {
         console.error('Error fetching chapter:', error);

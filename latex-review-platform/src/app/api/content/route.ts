@@ -18,7 +18,7 @@ function extractTitle(content: string): string {
     return sectionMatch[1];
   }
 
-  return '未命名章节';
+  return 'Untitled Chapter';
 }
 
 function processInputCommands(content: string, basePath: string, lang: 'zh' | 'en'): string {
@@ -106,10 +106,14 @@ function cleanLatexContent(content: string, basePath: string, lang: 'zh' | 'en')
 }
 
 function parseMainFile(lang: 'zh' | 'en' = 'zh') {
-  const mainFilePath = path.join(LATEX_PROJECT_PATHS[lang], 'xp_pgrs_unofficial_guide.tex');
+  const mainFilePath = path.join(LATEX_PROJECT_PATHS[lang], `xp_pgrs_unofficial_guide${lang === 'en' ? '_EN' : ''}.tex`);
+  if (!fs.existsSync(mainFilePath)) {
+    console.error(`Main file not found for language ${lang}: ${mainFilePath}`);
+    return [];
+  }
+
   const mainContent = fs.readFileSync(mainFilePath, 'utf-8');
-  
-  const chapters = [];
+  const chapters: Array<{ id: string; title: string; filename: string; content: string; type: string }> = [];
   let currentSection: 'frontmatter' | 'mainmatter' | 'backmatter' = 'frontmatter';
   
   const lines = mainContent.split('\n');
@@ -130,6 +134,11 @@ function parseMainFile(lang: 'zh' | 'en' = 'zh') {
       const chapterPath = path.join(LATEX_PROJECT_PATHS[lang], 'chapters', `${filename}.tex`);
       
       try {
+        if (!fs.existsSync(chapterPath)) {
+          console.warn(`Chapter file not found: ${chapterPath}`);
+          continue;
+        }
+
         const content = fs.readFileSync(chapterPath, 'utf-8');
         chapters.push({
           id: filename,
@@ -150,7 +159,7 @@ function parseMainFile(lang: 'zh' | 'en' = 'zh') {
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const lang = (searchParams.get('lang') || 'zh') as 'zh' | 'en';
+  const lang = (searchParams.get('lang') || 'en') as 'zh' | 'en';
   const chapterId = searchParams.get('chapterId');
 
   try {
@@ -159,6 +168,7 @@ export async function GET(request: NextRequest) {
     if (chapterId) {
       const chapter = chapters.find(c => c.id === chapterId);
       if (!chapter) {
+        console.error(`Chapter not found: ${chapterId} (language: ${lang})`);
         return NextResponse.json({ error: 'Chapter not found' }, { status: 404 });
       }
       return NextResponse.json(chapter);
