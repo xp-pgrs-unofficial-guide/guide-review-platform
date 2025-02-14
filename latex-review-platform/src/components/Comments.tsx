@@ -75,6 +75,7 @@ export default function Comments({ chapterId }: CommentsProps) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(commentData),
       });
 

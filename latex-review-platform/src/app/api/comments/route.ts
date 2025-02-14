@@ -50,37 +50,26 @@ export async function GET(request: NextRequest) {
 }
 
 // Create a new comment
-export async function POST(request: NextRequest) {
-  console.log('POST /api/comments - Received request');
-
-  // 检查用户是否已登录
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
-  }
-
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    console.log('POST /api/comments - Request body:', body);
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
+    const body = await req.json();
     const { content, chapterId, parentId } = body;
 
     if (!content || !chapterId) {
-      console.error('POST /api/comments - Missing required fields:', { content, chapterId });
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
-
-    console.log('POST /api/comments - Creating comment with data:', {
-      content,
-      chapterId,
-      parentId,
-    });
 
     const comment = await prisma.comment.create({
       data: {
@@ -95,10 +84,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('POST /api/comments - Created comment:', comment);
     return NextResponse.json(comment);
   } catch (error) {
-    console.error('POST /api/comments - Error:', error);
+    console.error('Error creating comment:', error);
     return NextResponse.json(
       { error: 'Failed to create comment' },
       { status: 500 }
