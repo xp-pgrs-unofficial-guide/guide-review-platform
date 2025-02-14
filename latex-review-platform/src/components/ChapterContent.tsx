@@ -17,9 +17,12 @@ interface ChapterContentProps {
 }
 
 const ChapterContent: FC<ChapterContentProps> = ({ content }) => {
+  // Escape angle brackets in the content
+  const escapedContent = content.replace(/<([^>]+)>/g, '\\<$1\\>');
+  
   return (
     <div data-color-mode="light">
-      <Markdown source={content} />
+      <Markdown source={escapedContent} />
     </div>
   );
 };
