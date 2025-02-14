@@ -191,12 +191,10 @@ export async function getChapterById(id: string): Promise<Chapter | null> {
       where: { id: chapter.id },
       update: {
         title: chapter.title,
-        content: chapter.content,
       },
       create: {
         id: chapter.id,
         title: chapter.title,
-        content: chapter.content,
       },
     });
     console.log('Chapter synced with database:', dbChapter);
@@ -218,12 +216,10 @@ export async function getAllChapters(): Promise<Chapter[]> {
           where: { id: chapter.id },
           update: {
             title: chapter.title,
-            content: chapter.content,
           },
           create: {
             id: chapter.id,
             title: chapter.title,
-            content: chapter.content,
           },
         })
       )
