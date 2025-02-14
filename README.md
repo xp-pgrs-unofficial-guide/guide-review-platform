@@ -25,6 +25,8 @@
 - Next.js - 网页框架
 - Tailwind CSS - 页面样式
 - LaTeX 解析器 - 用于处理文档内容
+- PostgreSQL - 数据库
+- Prisma - 数据库 ORM
 
 ## 开发相关
 
@@ -45,7 +47,54 @@
    npm install
    npm run dev
    ```
-4. 打开浏览器访问 `http://localhost:3000`
+4. 配置环境变量：
+   在项目根目录创建 `.env` 文件，添加以下内容：
+   ```bash
+   # 数据库连接 URL（替换用户名和密码）
+   DATABASE_URL="postgresql://username:password@localhost:5432/guide_review_db"
+   
+   # NextAuth 密钥（使用 openssl rand -base64 32 生成）
+   NEXTAUTH_SECRET="your-secret-key"
+   ```
+
+5. 设置数据库：
+   - 安装 PostgreSQL 数据库
+   - 创建新的数据库：
+     ```bash
+     createdb guide_review_db
+     ```
+   - 运行数据库迁移：
+     ```bash
+     npx prisma db push
+     ```
+   - （可选）启动 Prisma Studio 查看数据库内容：
+     ```bash
+     npx prisma studio
+     ```
+
+6. 打开浏览器访问 `http://localhost:3000`
+
+## 系统要求
+
+- Node.js 18.0 或更高版本
+- PostgreSQL 12.0 或更高版本
+- npm 或 yarn 包管理器
+
+## 数据库架构
+
+项目使用 PostgreSQL 数据库，主要包含以下表：
+- `User`: 用户信息（用户名、邮箱、密码等）
+- `Comment`: 评论内容（评论文本、作者、章节等）
+- `Session`: 用户会话信息
+
+详细的数据库架构可以在 `prisma/schema.prisma` 文件中查看。
+
+## 安全说明
+
+- 用户密码使用 bcrypt 加密存储
+- 使用 NextAuth.js 处理身份验证
+- 所有敏感信息都通过环境变量配置
+- 评论提交需要用户登录
 
 ## 许可证
 
