@@ -21,7 +21,7 @@ function extractTitle(content: string): string {
   return '未命名章节';
 }
 
-function processInputCommands(content: string, basePath: string): string {
+function processInputCommands(content: string, basePath: string, lang: 'zh' | 'en'): string {
   const inputRegex = /\\input\{([^}]+)\}/g;
   const authorRefRegex = /\\([A-Za-z]+)\b/g;
   
@@ -47,7 +47,7 @@ function processInputCommands(content: string, basePath: string): string {
       let absolutePath = path.join(basePath, fullPath);
       
       if (!fs.existsSync(absolutePath)) {
-        absolutePath = path.join(LATEX_PROJECT_PATHS.zh, fullPath);
+        absolutePath = path.join(LATEX_PROJECT_PATHS[lang], fullPath);
       }
       
       if (!fs.existsSync(absolutePath)) {
@@ -66,12 +66,12 @@ function processInputCommands(content: string, basePath: string): string {
       }
 
       if (!fs.existsSync(absolutePath)) {
-        console.warn(`Input file not found: ${fullPath} (tried multiple variations)`);
+        console.warn(`Input file not found for language ${lang}: ${fullPath} (tried multiple variations)`);
         return '';
       }
 
       const includedContent = fs.readFileSync(absolutePath, 'utf-8');
-      return processInputCommands(includedContent, path.dirname(absolutePath));
+      return processInputCommands(includedContent, path.dirname(absolutePath), lang);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.warn(`Error processing input file: ${filePath} - ${errorMessage}`);
@@ -80,8 +80,8 @@ function processInputCommands(content: string, basePath: string): string {
   });
 }
 
-function cleanLatexContent(content: string, basePath: string): string {
-  const processedContent = processInputCommands(content, basePath);
+function cleanLatexContent(content: string, basePath: string, lang: 'zh' | 'en'): string {
+  const processedContent = processInputCommands(content, basePath, lang);
   
   return processedContent
     .replace(/%.*$/gm, '')
@@ -135,7 +135,7 @@ function parseMainFile(lang: 'zh' | 'en' = 'zh') {
           id: filename,
           title: extractTitle(content),
           filename: `${filename}.tex`,
-          content: cleanLatexContent(content, path.dirname(chapterPath)),
+          content: cleanLatexContent(content, path.dirname(chapterPath), lang),
           type: currentSection
         });
       } catch (error) {

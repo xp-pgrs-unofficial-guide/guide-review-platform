@@ -13,7 +13,21 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('zh');
+  const [language, setLanguage] = useState<Language>(() => {
+    // Check localStorage first
+    const savedLang = typeof window !== 'undefined' ? localStorage.getItem('language') as Language : null;
+    // Check browser language
+    const browserLang = typeof window !== 'undefined' ? navigator.language.startsWith('zh') ? 'zh' : 'en' : 'en';
+    // Return saved language or browser language, fallback to 'en'
+    return savedLang || browserLang || 'en';
+  });
+
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
+  };
 
   const t = (path: string) => {
     const keys = path.split('.');
@@ -33,7 +47,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const currentLang = () => language;
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, currentLang }}>
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, currentLang }}>
       {children}
     </LanguageContext.Provider>
   );
