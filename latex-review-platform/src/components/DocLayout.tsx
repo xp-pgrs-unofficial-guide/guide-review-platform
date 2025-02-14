@@ -15,9 +15,9 @@ const DocLayout: FC<DocLayoutProps> = ({ children, chapters }) => {
   const pathname = usePathname();
 
   const sectionTitles = {
-    frontmatter: '前言部分',
-    mainmatter: '主要内容',
-    backmatter: '附录部分'
+    frontmatter: '',
+    mainmatter: '正文',
+    backmatter: '其他'
   };
 
   return (
@@ -32,6 +32,19 @@ const DocLayout: FC<DocLayoutProps> = ({ children, chapters }) => {
           <h2 className="text-lg font-semibold text-gray-800">目录</h2>
         </div>
         <div className="flex-1 overflow-y-auto">
+          {/* Homepage link */}
+          <div className="p-4 border-b border-gray-200">
+            <Link
+              href="/"
+              className={`block px-2 py-1 text-sm rounded-md ${
+                pathname === '/'
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              使用说明
+            </Link>
+          </div>
           {Object.entries(sectionTitles).map(([section, title]) => (
             <div key={section} className="p-4">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">

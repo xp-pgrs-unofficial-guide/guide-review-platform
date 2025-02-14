@@ -92,7 +92,8 @@ function processInputCommands(content: string, basePath: string): string {
       // Recursively process any nested inputs using the directory of the included file
       return processInputCommands(includedContent, path.dirname(absolutePath));
     } catch (error) {
-      console.warn(`Error processing input file: ${filePath} - ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`Error processing input file: ${filePath} - ${errorMessage}`);
       return '';
     }
   });
@@ -132,33 +133,41 @@ export function parseMainFile(): Chapter[] {
   const chapters: Chapter[] = [];
   let currentSection: 'frontmatter' | 'mainmatter' | 'backmatter' = 'frontmatter';
   
-  // 提取所有 \include 命令
-  const includePattern = /\\include{chapters\/([^}]+)}/g;
-  let match;
+  // 首先分割文件内容为行
+  const lines = mainContent.split('\n');
   
-  while ((match = includePattern.exec(mainContent)) !== null) {
-    const filename = match[1];
+  // 遍历每一行来确定文档结构
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    // 忽略注释行
+    if (line.startsWith('%')) continue;
     
-    // 检查当前部分
-    if (mainContent.slice(0, match.index).includes('\\mainmatter')) {
+    // 检查文档结构命令
+    if (line.includes('\\mainmatter')) {
       currentSection = 'mainmatter';
-    } else if (mainContent.slice(0, match.index).includes('\\backmatter')) {
+    } else if (line.includes('\\backmatter')) {
       currentSection = 'backmatter';
     }
     
-    const chapterPath = path.join(LATEX_PROJECT_PATH, 'chapters', `${filename}.tex`);
-    
-    try {
-      const content = fs.readFileSync(chapterPath, 'utf-8');
-      chapters.push({
-        id: filename,
-        title: extractTitle(content),
-        filename: `${filename}.tex`,
-        content: cleanLatexContent(content),
-        type: currentSection
-      });
-    } catch (error) {
-      console.error(`Error reading chapter file: ${filename}.tex`);
+    // 检查包含命令
+    const includeMatch = line.match(/^\\include{chapters\/([^}]+)}/);
+    if (includeMatch) {
+      const filename = includeMatch[1];
+      const chapterPath = path.join(LATEX_PROJECT_PATH, 'chapters', `${filename}.tex`);
+      
+      try {
+        const content = fs.readFileSync(chapterPath, 'utf-8');
+        chapters.push({
+          id: filename,
+          title: extractTitle(content),
+          filename: `${filename}.tex`,
+          content: cleanLatexContent(content),
+          type: currentSection
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Error reading chapter file: ${filename}.tex - ${errorMessage}`);
+      }
     }
   }
   
