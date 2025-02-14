@@ -106,7 +106,7 @@ function cleanLatexContent(content: string, basePath: string, lang: 'zh' | 'en')
 }
 
 function parseMainFile(lang: 'zh' | 'en' = 'zh') {
-  const mainFilePath = path.join(LATEX_PROJECT_PATHS[lang], `xp_pgrs_unofficial_guide${lang === 'en' ? '_EN' : ''}.tex`);
+  const mainFilePath = path.join(LATEX_PROJECT_PATHS[lang], `xp_pgrs_unofficial_guide.tex`);
   if (!fs.existsSync(mainFilePath)) {
     console.error(`Main file not found for language ${lang}: ${mainFilePath}`);
     return [];
