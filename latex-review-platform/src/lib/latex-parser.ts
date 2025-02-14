@@ -12,7 +12,10 @@ export interface Chapter {
   type: 'frontmatter' | 'mainmatter' | 'backmatter';
 }
 
-const LATEX_PROJECT_PATH = path.join(process.cwd(), 'xp_pgrs_unofficial_guide');
+const LATEX_PROJECT_PATHS = {
+  zh: path.join(process.cwd(), 'xp_pgrs_unofficial_guide'),
+  en: path.join(process.cwd(), 'xp_pgrs_unofficial_guide_EN')
+};
 
 export function extractTitle(content: string): string {
   // 尝试从章节内容中提取标题
@@ -64,7 +67,7 @@ function processInputCommands(content: string, basePath: string): string {
       
       // If file doesn't exist at relative path, try from project root
       if (!fs.existsSync(absolutePath)) {
-        absolutePath = path.join(LATEX_PROJECT_PATH, fullPath);
+        absolutePath = path.join(LATEX_PROJECT_PATHS.zh, fullPath);
       }
       
       // If still not found, try some common variations
@@ -104,7 +107,7 @@ function processInputCommands(content: string, basePath: string): string {
 
 export function cleanLatexContent(content: string): string {
   // First process any \input commands
-  const processedContent = processInputCommands(content, LATEX_PROJECT_PATH);
+  const processedContent = processInputCommands(content, LATEX_PROJECT_PATHS.zh);
   
   // Then apply existing cleaning logic
   return processedContent
@@ -129,104 +132,69 @@ export function cleanLatexContent(content: string): string {
     .trim();
 }
 
-export function parseMainFile(): Chapter[] {
-  const mainFilePath = path.join(LATEX_PROJECT_PATH, 'xp_pgrs_unofficial_guide.tex');
-  const mainContent = fs.readFileSync(mainFilePath, 'utf-8');
-  
-  const chapters: Chapter[] = [];
-  let currentSection: 'frontmatter' | 'mainmatter' | 'backmatter' = 'frontmatter';
-  
-  // 首先分割文件内容为行
-  const lines = mainContent.split('\n');
-  
-  // 遍历每一行来确定文档结构
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    // 忽略注释行
-    if (line.startsWith('%')) continue;
-    
-    // 检查文档结构命令
-    if (line.includes('\\mainmatter')) {
-      currentSection = 'mainmatter';
-    } else if (line.includes('\\backmatter')) {
-      currentSection = 'backmatter';
+export async function getChapterById(id: string, lang: 'zh' | 'en' = 'zh'): Promise<Chapter | null> {
+  try {
+    const response = await fetch(`/api/content?chapterId=${id}&lang=${lang}`);
+    if (!response.ok) {
+      return null;
     }
-    
-    // 检查包含命令
-    const includeMatch = line.match(/^\\include{chapters\/([^}]+)}/);
-    if (includeMatch) {
-      const filename = includeMatch[1];
-      const chapterPath = path.join(LATEX_PROJECT_PATH, 'chapters', `${filename}.tex`);
-      
-      try {
-        const content = fs.readFileSync(chapterPath, 'utf-8');
-        chapters.push({
-          id: filename,
-          title: extractTitle(content),
-          filename: `${filename}.tex`,
-          content: cleanLatexContent(content),
-          type: currentSection
-        });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Error reading chapter file: ${filename}.tex - ${errorMessage}`);
-      }
-    }
-  }
-  
-  return chapters;
-}
+    const chapter = await response.json();
 
-export async function getChapterById(id: string): Promise<Chapter | null> {
-  const chapters = parseMainFile();
-  const chapter = chapters.find(chapter => chapter.id === id);
-  
-  if (!chapter) {
+    // 确保章节在数据库中存在
+    try {
+      const dbChapter = await prisma.chapter.upsert({
+        where: { id: chapter.id },
+        update: {
+          title: chapter.title,
+        },
+        create: {
+          id: chapter.id,
+          title: chapter.title,
+        },
+      });
+      console.log('Chapter synced with database:', dbChapter);
+    } catch (error) {
+      console.error('Error syncing chapter with database:', error);
+    }
+
+    return chapter;
+  } catch (error) {
+    console.error('Error fetching chapter:', error);
     return null;
   }
-
-  // 确保章节在数据库中存在
-  try {
-    const dbChapter = await prisma.chapter.upsert({
-      where: { id: chapter.id },
-      update: {
-        title: chapter.title,
-      },
-      create: {
-        id: chapter.id,
-        title: chapter.title,
-      },
-    });
-    console.log('Chapter synced with database:', dbChapter);
-  } catch (error) {
-    console.error('Error syncing chapter with database:', error);
-  }
-
-  return chapter;
 }
 
-export async function getAllChapters(): Promise<Chapter[]> {
-  const chapters = parseMainFile();
-  
-  // 确保所有章节都在数据库中存在
+export async function getAllChapters(lang: 'zh' | 'en' = 'zh'): Promise<Chapter[]> {
   try {
-    await Promise.all(
-      chapters.map(chapter =>
-        prisma.chapter.upsert({
-          where: { id: chapter.id },
-          update: {
-            title: chapter.title,
-          },
-          create: {
-            id: chapter.id,
-            title: chapter.title,
-          },
-        })
-      )
-    );
-  } catch (error) {
-    console.error('Error syncing chapters with database:', error);
-  }
+    const response = await fetch(`/api/content?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch chapters');
+    }
+    const chapters = await response.json();
 
-  return chapters;
+    // 确保所有章节都在数据库中存在
+    try {
+      await Promise.all(
+        chapters.map(chapter =>
+          prisma.chapter.upsert({
+            where: { id: chapter.id },
+            update: {
+              title: chapter.title,
+            },
+            create: {
+              id: chapter.id,
+              title: chapter.title,
+            },
+          })
+        )
+      );
+    } catch (error) {
+      console.error('Error syncing chapters with database:', error);
+    }
+
+    return chapters;
+  } catch (error) {
+    console.error('Error fetching chapters:', error);
+    return [];
+  }
 }

@@ -4,13 +4,13 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import DocLayout from '@/components/DocLayout';
 import { NextAuthProvider } from './providers';
-import { getAllChapters } from '@/lib/latex-parser';
+import { LanguageProvider } from './i18n/LanguageContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: '西浦博士生非官方攻略',
-  description: '西浦博士生非官方攻略',
+  title: 'XJTLU PhD Guide',
+  description: 'XJTLU PhD Guide',
 };
 
 export default async function RootLayout({
@@ -18,16 +18,18 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const chapters = await getAllChapters();
+  const chapters = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/content?lang=zh`).then(res => res.json());
 
   return (
-    <html lang="zh">
+    <html>
       <body className={inter.className}>
         <NextAuthProvider>
-          <Navbar />
-          <DocLayout chapters={chapters}>
-            {children}
-          </DocLayout>
+          <LanguageProvider>
+            <Navbar />
+            <DocLayout initialChapters={chapters}>
+              {children}
+            </DocLayout>
+          </LanguageProvider>
         </NextAuthProvider>
       </body>
     </html>
