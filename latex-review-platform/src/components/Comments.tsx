@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface Comment {
   id: string;
@@ -17,8 +19,9 @@ interface CommentsProps {
 export default function Comments({ chapterId }: CommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [authorName, setAuthorName] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     console.log('Comments component mounted with chapterId:', chapterId);
@@ -44,11 +47,10 @@ export default function Comments({ chapterId }: CommentsProps) {
   const handleSubmit = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
     
-    console.log('Form submission started');
-    console.log('Chapter ID:', chapterId);
-    console.log('Author Name:', authorName);
-    console.log('Comment Content:', newComment);
-    console.log('Parent ID:', parentId);
+    if (!session) {
+      router.push('/login');
+      return;
+    }
 
     if (!chapterId) {
       console.error('Missing chapterId');
@@ -56,10 +58,6 @@ export default function Comments({ chapterId }: CommentsProps) {
       return;
     }
 
-    if (!authorName.trim()) {
-      alert('请输入您的名字');
-      return;
-    }
     if (!newComment.trim()) {
       alert('请输入评论内容');
       return;
@@ -67,12 +65,9 @@ export default function Comments({ chapterId }: CommentsProps) {
 
     const commentData = {
       content: newComment.trim(),
-      authorName: authorName.trim(),
       chapterId,
       parentId,
     };
-
-    console.log('Submitting comment:', commentData);
 
     try {
       const response = await fetch('/api/comments', {
@@ -84,7 +79,6 @@ export default function Comments({ chapterId }: CommentsProps) {
       });
 
       const data = await response.json();
-      console.log('Response from server:', data);
 
       if (response.ok) {
         setNewComment('');
@@ -100,68 +94,68 @@ export default function Comments({ chapterId }: CommentsProps) {
     }
   };
 
+  const renderCommentForm = (parentId?: string) => {
+    if (!session) {
+      return (
+        <div className="mt-4">
+          <button
+            onClick={() => router.push('/login')}
+            className="w-full px-4 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            请登录后发表评论
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <form onSubmit={(e) => handleSubmit(e, parentId)} className="mt-4 space-y-4">
+        <div>
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="写下你的评论..."
+            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            rows={3}
+          />
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500">
+            以 {session.user?.username || session.user?.name || 'Anonymous'} 的身份发表
+          </span>
+          <button
+            type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            发表评论
+          </button>
+        </div>
+      </form>
+    );
+  };
+
   const CommentItem = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
     <div className={`${isReply ? 'ml-8' : ''} mb-6`}>
       <div className="flex space-x-3">
-        <div className="flex-shrink-0">
-          <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
-            <span className="text-white">{comment.authorName.charAt(0).toUpperCase()}</span>
+        <div className="flex-1 space-y-1.5">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-900">{comment.authorName}</span>
+            <span className="text-sm text-gray-500">
+              {new Date(comment.createdAt).toLocaleString('zh-CN')}
+            </span>
           </div>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-900">{comment.authorName}</p>
-          <p className="mt-1 text-sm text-gray-700">{comment.content}</p>
-          <div className="mt-2 text-sm space-x-4">
-            <span className="text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
+          <p className="text-gray-800">{comment.content}</p>
+          <div className="flex items-center space-x-2">
             {!isReply && (
               <button
                 onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                className="text-blue-600 hover:text-blue-800"
+                className="text-sm text-blue-600 hover:text-blue-800"
               >
-                回复
+                {replyTo === comment.id ? '取消回复' : '回复'}
               </button>
             )}
           </div>
-          {replyTo === comment.id && (
-            <form onSubmit={(e) => handleSubmit(e, comment.id)} className="mt-4">
-              <input
-                type="text"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                placeholder="您的名字"
-                required
-              />
-              <div className="mt-2">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="写下您的回复..."
-                  rows={2}
-                  required
-                />
-              </div>
-              <div className="mt-2 flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReplyTo(null);
-                    setNewComment('');
-                  }}
-                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  回复
-                </button>
-              </div>
-            </form>
-          )}
+          {replyTo === comment.id && renderCommentForm(comment.id)}
           {comment.replies?.map((reply) => (
             <CommentItem key={reply.id} comment={reply} isReply />
           ))}
@@ -171,40 +165,16 @@ export default function Comments({ chapterId }: CommentsProps) {
   );
 
   return (
-    <div>
-      <form onSubmit={(e) => handleSubmit(e)} className="mb-8">
-        <input
-          type="text"
-          value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm mb-2"
-          placeholder="您的名字"
-          required
-        />
-        <div className="border-b border-gray-200 focus-within:border-indigo-600">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            rows={3}
-            className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:ring-0 sm:text-sm sm:leading-6"
-            placeholder="写下您的评论..."
-            required
-          />
-        </div>
-        <div className="flex justify-end mt-2">
-          <button
-            type="submit"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            发表评论
-          </button>
-        </div>
-      </form>
-
-      <div className="space-y-4">
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">评论区</h3>
+      {renderCommentForm()}
+      <div className="mt-8 space-y-6">
         {comments.map((comment) => (
           <CommentItem key={comment.id} comment={comment} />
         ))}
+        {comments.length === 0 && (
+          <p className="text-center text-gray-500">暂无评论</p>
+        )}
       </div>
     </div>
   );

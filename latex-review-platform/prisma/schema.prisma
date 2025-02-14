@@ -1,13 +1,23 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  password      String
+  email         String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  comments      Comment[]
 }
 
 model Chapter {
@@ -19,14 +29,16 @@ model Chapter {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  authorName String  // 评论者的名字
-  chapterId String
+  id         String    @id @default(cuid())
+  content    String
+  authorId   String
+  authorName String
+  chapterId  String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  parentId   String?
+  parent     Comment?  @relation("CommentToComment", fields: [parentId], references: [id])
+  replies    Comment[] @relation("CommentToComment")
+  author     User      @relation(fields: [authorId], references: [id])
   chapter   Chapter  @relation(fields: [chapterId], references: [id])
-  parentId  String?  // For nested comments
-  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentReplies")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

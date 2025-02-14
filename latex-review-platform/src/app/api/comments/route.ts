@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 const prisma = new PrismaClient();
 
@@ -12,20 +14,23 @@ export async function GET(request: NextRequest) {
 
   if (!chapterId) {
     console.error('GET /api/comments - Missing chapterId');
-    return NextResponse.json({ error: 'Chapter ID is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Missing chapterId parameter' },
+      { status: 400 }
+    );
   }
 
   try {
     const comments = await prisma.comment.findMany({
       where: {
-        chapterId,
+        chapterId: chapterId,
         parentId: null, // Only get top-level comments
       },
       include: {
         replies: {
           include: {
-            replies: true // Include nested replies
-          }
+            replies: true, // Include nested replies
+          },
         },
       },
       orderBy: {
@@ -47,15 +52,24 @@ export async function GET(request: NextRequest) {
 // Create a new comment
 export async function POST(request: NextRequest) {
   console.log('POST /api/comments - Received request');
-  
+
+  // 检查用户是否已登录
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     console.log('POST /api/comments - Request body:', body);
-    
-    const { content, authorName, chapterId, parentId } = body;
 
-    if (!content || !authorName || !chapterId) {
-      console.error('POST /api/comments - Missing required fields:', { content, authorName, chapterId });
+    const { content, chapterId, parentId } = body;
+
+    if (!content || !chapterId) {
+      console.error('POST /api/comments - Missing required fields:', { content, chapterId });
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -64,7 +78,6 @@ export async function POST(request: NextRequest) {
 
     console.log('POST /api/comments - Creating comment with data:', {
       content,
-      authorName,
       chapterId,
       parentId,
     });
@@ -72,9 +85,10 @@ export async function POST(request: NextRequest) {
     const comment = await prisma.comment.create({
       data: {
         content,
-        authorName,
         chapterId,
         parentId,
+        authorId: session.user.id,
+        authorName: session.user.username || session.user.name || 'Anonymous',
       },
       include: {
         replies: true,
@@ -86,7 +100,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('POST /api/comments - Error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create comment' },
+      { error: 'Failed to create comment' },
       { status: 500 }
     );
   }
