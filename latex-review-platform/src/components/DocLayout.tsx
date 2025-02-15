@@ -13,7 +13,7 @@ interface DocLayoutProps {
 
 const DocLayout: FC<DocLayoutProps> = ({ children, initialChapters }) => {
   const pathname = usePathname();
-  const { currentLang, t } = useLanguage();
+  const { currentLang} = useLanguage();
   const [chapters, setChapters] = useState(initialChapters);
 
   useEffect(() => {

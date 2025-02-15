@@ -7,7 +7,6 @@ async function main() {
   const chapter = await prisma.chapter.create({
     data: {
       title: '测试章节',
-      content: '这是一个测试章节的内容。',
     },
   });
 

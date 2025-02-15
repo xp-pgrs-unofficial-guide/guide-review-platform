@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../auth/auth.config';
 
 const prisma = new PrismaClient();
 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         chapterId,
         parentId,
         authorId: session.user.id,
-        authorName: session.user.username || session.user.name || 'Anonymous',
+        authorName: session.user.name || session.user.name || 'Anonymous',
       },
       include: {
         replies: true,

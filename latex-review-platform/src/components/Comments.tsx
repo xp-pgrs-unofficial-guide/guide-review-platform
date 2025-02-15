@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '@/lib/api-utils';
 
 interface Comment {
   id: string;
@@ -23,18 +24,11 @@ export default function Comments({ chapterId }: CommentsProps) {
   const { data: session } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    console.log('Comments component mounted with chapterId:', chapterId);
-    fetchComments();
-  }, [chapterId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
-      console.log('Fetching comments for chapter:', chapterId);
-      const response = await fetch(`/api/comments?chapterId=${chapterId}`);
+      const response = await fetch(getApiUrl(`comments?chapterId=${chapterId}`));
       const data = await response.json();
       if (response.ok) {
-        console.log('Received comments:', data);
         setComments(data);
       } else {
         console.error('Error response:', data);
@@ -42,7 +36,12 @@ export default function Comments({ chapterId }: CommentsProps) {
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
-  };
+  }, [chapterId]);
+
+  useEffect(() => {
+    console.log('Comments component mounted with chapterId:', chapterId);
+    fetchComments();
+  }, [chapterId, fetchComments]);
 
   const handleSubmit = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
@@ -122,7 +121,7 @@ export default function Comments({ chapterId }: CommentsProps) {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">
-            以 {session.user?.username || session.user?.name || 'Anonymous'} 的身份发表
+            以 {session.user?.name || 'Anonymous'} 的身份发表
           </span>
           <button
             type="submit"

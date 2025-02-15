@@ -1,14 +1,12 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/app/i18n/LanguageContext';
 import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 export default function Navbar() {
   const { data: session } = useSession();
-  const router = useRouter();
   const { t, currentLang } = useLanguage();
 
   return (
@@ -22,7 +20,7 @@ export default function Navbar() {
           {session ? (
             <>
               <span className="text-gray-700">
-                {session.user?.username || session.user?.name}
+                {session.user?.name || session.user?.email}
               </span>
               <button
                 onClick={() => signOut()}

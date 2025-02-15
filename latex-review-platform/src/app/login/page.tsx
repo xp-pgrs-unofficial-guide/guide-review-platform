@@ -5,6 +5,9 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// 添加动态路由配置，防止静态预渲染
+export const dynamic = 'force-dynamic';
+
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

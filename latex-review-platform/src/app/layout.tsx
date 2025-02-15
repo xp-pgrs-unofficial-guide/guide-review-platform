@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   description: 'XJTLU PhD Guide',
 };
 
+// 禁用所有页面的静态生成
+export const generateStaticParams = () => [];
+export const dynamic = 'force-dynamic';
+
 export default async function RootLayout({
   children,
 }: {
@@ -21,7 +25,7 @@ export default async function RootLayout({
   const chapters = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/content?lang=zh`).then(res => res.json());
 
   return (
-    <html>
+    <html lang="en">
       <body className={inter.className}>
         <NextAuthProvider>
           <LanguageProvider>

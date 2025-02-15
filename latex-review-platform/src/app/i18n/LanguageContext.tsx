@@ -3,6 +3,10 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Language, translations } from './translations';
 
+type NestedTranslation = {
+  [key: string]: string | NestedTranslation;
+};
+
 type LanguageContextType = {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -31,17 +35,26 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const t = (path: string) => {
     const keys = path.split('.');
-    let current: any = translations[language];
+    let current: NestedTranslation = translations[language];
     
-    for (const key of keys) {
-      if (current[key] === undefined) {
-        console.warn(`Translation missing for key: ${path}`);
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (typeof current[key] !== 'object') {
+        console.warn(`Translation path invalid at key: ${key} in path: ${path}`);
         return path;
       }
-      current = current[key];
+      current = current[key] as NestedTranslation;
+    }
+
+    const finalKey = keys[keys.length - 1];
+    const finalValue = current[finalKey];
+    
+    if (typeof finalValue !== 'string') {
+      console.warn(`Translation value is not a string for path: ${path}`);
+      return path;
     }
     
-    return current;
+    return finalValue;
   };
 
   const currentLang = () => language;

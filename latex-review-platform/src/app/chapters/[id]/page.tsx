@@ -1,8 +1,8 @@
 'use server';
 
-import { FC } from 'react';
 import { notFound } from 'next/navigation';
 import ChapterWithLanguage from '@/components/ChapterWithLanguage';
+import { getApiUrl } from '@/lib/api-utils';
 
 interface ChapterPageProps {
   params: Promise<{
@@ -16,10 +16,13 @@ const ChapterPage = async ({ params }: ChapterPageProps) => {
   if (!id) {
     notFound();
   }
-
+    
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/content?chapterId=${id}`,
-    { cache: 'no-store' }
+    getApiUrl(`content?chapterId=${id}`),
+    { 
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    }
   );
   
   if (!response.ok) {

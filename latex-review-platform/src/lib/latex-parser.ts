@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { getApiUrl } from './api-utils';
 
 const prisma = new PrismaClient();
 
@@ -166,7 +167,7 @@ export async function getChapterById(id: string, lang: 'zh' | 'en' = 'zh'): Prom
 
 export async function getAllChapters(lang: 'zh' | 'en' = 'zh'): Promise<Chapter[]> {
   try {
-    const response = await fetch(`/api/content?lang=${lang}`);
+    const response = await fetch(getApiUrl(`content?lang=${lang}`));
     if (!response.ok) {
       throw new Error('Failed to fetch chapters');
     }
@@ -175,7 +176,7 @@ export async function getAllChapters(lang: 'zh' | 'en' = 'zh'): Promise<Chapter[
     // 确保所有章节都在数据库中存在
     try {
       await Promise.all(
-        chapters.map(chapter =>
+        chapters.map((chapter: Chapter) =>
           prisma.chapter.upsert({
             where: { id: chapter.id },
             update: {

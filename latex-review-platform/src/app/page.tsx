@@ -2,6 +2,9 @@
 
 import { useLanguage } from './i18n/LanguageContext';
 
+// 添加动态路由配置，防止静态预渲染
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const { currentLang } = useLanguage();
 
